@@ -6,6 +6,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import authConfig from "./auth.config";
 import { db } from "@/lib/db";
 import { findUserByEmail, findUserById } from "./data/user";
+import { requestToBodyStream } from "next/dist/server/body-streams";
 
 
 
@@ -27,14 +28,14 @@ export const { handlers:{GET,POST}, auth ,signIn,signOut} = NextAuth({
   
   ,callbacks:{
 
-    async signIn({user}){
-      console.log({user});
-      const existingUser=await findUserById(user.id);
+    async signIn({user,account}){
+     if(account?.provider!=="credentials") return true;
+     const existingUser=await findUserByEmail(user.id);
 
-      if(!existingUser || !existingUser.emailVerified) return false;
+     //prevent signin without email verification
+     if(!existingUser?.emailVerified) return false;
 
-
-      return true
+     return true;
     },
    
     async session({token,session}){
